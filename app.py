@@ -15,7 +15,7 @@ with st.sidebar:
     
     model_choice = st.selectbox(
         "Gemini 모델 선택",
-        ["gemini-2.5-flash", "gemini-2.5-pro", "직접 입력"],
+        ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.1-pro", "직접 입력"],
         index=0
     )
     if model_choice == "직접 입력":
