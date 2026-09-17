@@ -8,10 +8,21 @@ from docx import Document
 
 st.set_page_config(page_title="3개년 감사보고서 재무 & Gemini AI 심사", layout="wide")
 
-# 1. 개별 API Key 입력 (사이드바)
+# 1. API Key 및 모델 선택 (사이드바)
 with st.sidebar:
     st.title("⚙️ AI 설정")
     user_api_key = st.text_input("Gemini API Key 입력", type="password", help="Google AI Studio에서 발급받은 키를 입력하세요.")
+    
+    # 모델 선택 및 직접 입력 옵션 추가
+    model_choice = st.selectbox(
+        "Gemini 모델 선택",
+        ["gemini-2.5-flash", "gemini-2.5-pro", "직접 입력"],
+        index=0
+    )
+    if model_choice == "직접 입력":
+        selected_model_name = st.text_input("사용할 모델명 입력", value="gemini-3.6")
+    else:
+        selected_model_name = model_choice
 
 st.title("📈 3개년 감사보고서 재무 분석 및 Gemini AI 심사 시스템")
 
@@ -58,9 +69,9 @@ if uploaded_files:
             else:
                 try:
                     genai.configure(api_key=user_api_key)
-                    model = genai.GenerativeModel("gemini-2.5-flash")
+                    # 동적으로 지정된 모델 실행
+                    model = genai.GenerativeModel(selected_model_name)
                     
-                    # 데이터 표 내용 요약 텍스트화
                     table_summary = ""
                     for fname, df in parsed_tables:
                         table_summary += f"\n[{fname} 재무 데이터]\n" + df.to_string() + "\n"
@@ -81,12 +92,12 @@ if uploaded_files:
                     {combined_text[:12000]}
                     """
                     
-                    with st.spinner("Gemini AI가 3개년 데이터를 정밀 분석 중입니다..."):
+                    with st.spinner(f"Gemini AI({selected_model_name})가 3개년 데이터를 정밀 분석 중입니다..."):
                         response = model.generate_content(prompt)
                         st.session_state["ai_result"] = response.text
                         st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"AI 분석 중 오류가 발생했습니다: {e}")
+                    st.error(f"AI 분석 중 오류가 발생했습니다: {e}\n(입력하신 모델명 '{selected_model_name}'이 API에서 지원되는지 확인해주세요.)")
 
     # 3. 첨부 파일의 표가 포함된 Word 보고서 생성
     with tab2:
@@ -94,7 +105,6 @@ if uploaded_files:
             doc = Document()
             doc.add_heading('3개년 감사보고서 재무 & Gemini AI 심사 보고서', level=0)
             
-            # 업로드된 데이터 표를 Word 문서에 작성
             if parsed_tables:
                 doc.add_heading('1. 주요 재무 데이터 표', level=1)
                 for fname, df in parsed_tables:
